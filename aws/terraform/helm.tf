@@ -1,4 +1,4 @@
-resource "helm_release" "example" {
+resource "helm_release" "inforiver" {
   name       = "inforiverdeployment"
   repository = "https://newmannbritto.github.io/Turing-Helm"
   chart      = "inforiver"
@@ -75,6 +75,16 @@ resource "helm_release" "example" {
     name  = "env.DOCKER_REGISTRY_SERVER_PASSWORD"
     value = var.Dockerpwd
   }  
+
+  set {
+    name  = "env.FABRIC_WAREHOUSE_STORAGE_ACCOUNT_NAME"
+    value = var.FabricStorageAccountName
+  } 
+
+  set {
+    name  = "env.FABRIC_WAREHOUSE_STORAGE_ACCOUNT_KEY"
+    value = var.FabricStorageAccountKey
+  } 
 
   set {
     name  = "env.O365_APP_CLIENT_ID"
@@ -165,6 +175,16 @@ resource "helm_release" "example" {
   set {
     name  = "loadbalancer.SSL_ARN"
     value = var.SSL_ARN
+  } 
+
+  set {
+    name  = "role.ROLE_ARN"
+    value = aws_iam_role.workernode_role.arn
+  } 
+
+  set {
+    name  = "pv.efs_id"
+    value = aws_efs_file_system.inforiver_efs.id
   } 
 
 

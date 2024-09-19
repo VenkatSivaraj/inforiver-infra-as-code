@@ -2,7 +2,7 @@
 resource "aws_eks_cluster" "inforiver_eks" {
   name                      = "${var.project}-cluster"
   role_arn                  = aws_iam_role.cluster_role.arn
-  version                   = "1.27" #Kubernetes version
+  version                   = "1.30" #Kubernetes version
   enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   vpc_config {
     subnet_ids              = [aws_subnet.public.id,aws_subnet.application.id,aws_subnet.database.id]
@@ -117,6 +117,7 @@ resource "aws_iam_role_policy_attachment" "workernode_policy" {
     "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
     "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
     "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+    "arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy",
   ])
   policy_arn                = each.value
   role                      = aws_iam_role.workernode_role.name
@@ -150,7 +151,13 @@ resource "aws_launch_template" "workernodelaunchtemplate" {
       encrypted = "false"
     }
   }
+  tag_specifications {
+    resource_type = "instance"
 
+    tags = {
+      Name = "${var.project}-workernode"
+    }
+  }
   instance_type = "${var.instance_type}"
   key_name = aws_key_pair.EKS_workernode_key_pair.key_name
   vpc_security_group_ids = [aws_security_group.alb_securitygroup.id,aws_security_group.eks_security_group.id]
@@ -170,7 +177,7 @@ resource "aws_eks_node_group" "workernode" {
     version                 = aws_launch_template.workernodelaunchtemplate.latest_version
   }
   scaling_config {
-    desired_size            = 1
+    desired_size            = 2
     max_size                = 2
     min_size                = 1
   }
@@ -222,6 +229,16 @@ resource "aws_eks_addon" "kube-proxy" {
 resource "aws_eks_addon" "cloud-watch" {
   cluster_name                = aws_eks_cluster.inforiver_eks.name
   addon_name                  = "amazon-cloudwatch-observability"
+
+  depends_on            = [
+    aws_eks_node_group.workernode
+    ]
+}
+
+resource "aws_eks_addon" "aws-efs-csi-driver" {
+  cluster_name                = aws_eks_cluster.inforiver_eks.name
+  addon_name                  = "aws-efs-csi-driver"
+  service_account_role_arn    = aws_iam_role.workernode_role.arn
 
   depends_on            = [
     aws_eks_node_group.workernode
