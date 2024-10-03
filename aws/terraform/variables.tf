@@ -171,3 +171,13 @@ variable "WebHookKey" {
   description = "Web hook authorization key"
   type        = string
 }
+
+variable "FabricStorageAccountName" {
+  description = "Fabric Storage Account Name"
+  type        = string
+}
+
+variable "FabricStorageAccountKey" {
+  description = "Fabric Storage Account Key"
+  type        = string
+}

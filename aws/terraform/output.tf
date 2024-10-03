@@ -9,3 +9,5 @@ output "cluster_endpoint" {
 output "workernode_role_arn" {
   value = aws_iam_role.workernode_role.arn
 }
+
+
